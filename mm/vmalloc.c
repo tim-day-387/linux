@@ -3382,6 +3382,7 @@ void vfree_atomic(const void *addr)
 	if (addr && llist_add((struct llist_node *)addr, &p->list))
 		schedule_work(&p->wq);
 }
+EXPORT_SYMBOL(vfree_atomic);
 
 /**
  * vfree - Release memory allocated by vmalloc()
