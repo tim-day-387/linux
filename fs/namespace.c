@@ -4818,9 +4818,12 @@ static int can_idmap_mount(const struct mount_kattr *kattr, struct mount *mnt)
 	if (m->mnt_sb->s_iflags & SB_I_NOIDMAP)
 		return -EINVAL;
 
-	/* We're not controlling the superblock. */
+	/* FIXME: Let rootless podman idmap mounts for now...
+	 *
+	 * We're not controlling the superblock.
 	if (!ns_capable(fs_userns, CAP_SYS_ADMIN))
 		return -EPERM;
+	 */
 
 	/* Mount has already been visible in the filesystem hierarchy. */
 	if (!is_anon_ns(mnt->mnt_ns))
