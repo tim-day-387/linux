@@ -38,6 +38,17 @@ static int ovl_check_redirect(const struct path *path, struct ovl_lookup_data *d
 	char *buf;
 	struct ovl_fs *ofs = OVL_FS(d->sb);
 
+	/*
+	 * Skip the per-component getxattr if we'd refuse to follow the
+	 * result anyway (mirrors the check_redirect predicate in
+	 * ovl_lookup()). Avoids an xattr syscall per lower-layer
+	 * component, and prevents lower filesystems that return errors
+	 * other than ENODATA/EOPNOTSUPP for an absent xattr (e.g.
+	 * EACCES) from failing every lookup with a value we'd discard.
+	 */
+	if (!ovl_redirect_follow(ofs) && !ofs->numdatalayer)
+		return 0;
+
 	d->absolute_redirect = false;
 	buf = ovl_get_redirect_xattr(ofs, path, prelen + strlen(post));
 	if (IS_ERR_OR_NULL(buf))
@@ -1342,12 +1353,20 @@ struct dentry *ovl_lookup(struct inode *dir, struct dentry *dentry,
 		 * It's safe to assign upperredirect here: the previous
 		 * assignment happens only if upperdentry is non-NULL, and
 		 * this one only if upperdentry is NULL.
+		 *
+		 * Skip the getxattr if we'd refuse to follow the result
+		 * anyway (mirrors ovl_check_redirect()). Avoids a syscall
+		 * we'd discard, and keeps lookups working when the upper
+		 * filesystem returns errors other than ENODATA/EOPNOTSUPP
+		 * for an absent xattr.
 		 */
-		d.upperredirect = ovl_get_redirect_xattr(ofs, &upperpath, 0);
-		if (IS_ERR(d.upperredirect)) {
-			err = PTR_ERR(d.upperredirect);
-			d.upperredirect = NULL;
-			goto out_free_oe;
+		if (ovl_redirect_follow(ofs) || ofs->numdatalayer) {
+			d.upperredirect = ovl_get_redirect_xattr(ofs, &upperpath, 0);
+			if (IS_ERR(d.upperredirect)) {
+				err = PTR_ERR(d.upperredirect);
+				d.upperredirect = NULL;
+				goto out_free_oe;
+			}
 		}
 
 		err = ovl_check_metacopy_xattr(ofs, &upperpath, NULL);
