@@ -985,6 +985,10 @@ int ovl_fs_params_verify(const struct ovl_fs_context *ctx,
 	}
 
 
+	/* Auto-enable userxattr when mounting without CAP_SYS_ADMIN */
+	if (!config->userxattr && !capable(CAP_SYS_ADMIN))
+		config->userxattr = true;
+
 	/* Resolve userxattr -> !redirect && !metacopy dependency */
 	if (config->userxattr) {
 		if (set.redirect &&
