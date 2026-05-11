@@ -49,6 +49,7 @@
 #include <linux/kthread.h>
 #include <linux/suspend.h>
 #include <linux/rseq.h>
+#include <linux/namei.h>
 
 #include <asm/processor.h>
 #include <asm/ioctl.h>
@@ -5565,7 +5566,21 @@ static struct miscdevice kvm_dev = {
 	KVM_MINOR,
 	"kvm",
 	&kvm_chardev_ops,
+	.mode = 0666,
 };
+
+static void kvm_set_dev_immutable(bool immutable)
+{
+	struct path path;
+
+	if (kern_path("/dev/kvm", LOOKUP_FOLLOW, &path))
+		return;
+	if (immutable)
+		path.dentry->d_inode->i_flags |= S_IMMUTABLE;
+	else
+		path.dentry->d_inode->i_flags &= ~S_IMMUTABLE;
+	path_put(&path);
+}
 
 #ifdef CONFIG_KVM_GENERIC_HARDWARE_ENABLING
 bool __ro_after_init enable_virt_at_load = true;
@@ -6550,6 +6565,8 @@ int kvm_init(unsigned vcpu_size, unsigned vcpu_align, struct module *module)
 		goto err_register;
 	}
 
+	kvm_set_dev_immutable(true);
+
 	return 0;
 
 err_register:
@@ -6580,6 +6597,7 @@ void kvm_exit(void)
 	 * fops_get(), a.k.a. try_module_get(), prevents acquiring references
 	 * to KVM while the module is being stopped.
 	 */
+	kvm_set_dev_immutable(false);
 	misc_deregister(&kvm_dev);
 
 	kvm_uninit_virtualization();
