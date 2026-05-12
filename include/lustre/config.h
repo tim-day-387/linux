@@ -2,7 +2,7 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* enable libcfs CDEBUG, CWARN */
-/* #undef CDEBUG_ENABLED */
+#define CDEBUG_ENABLED 1
 
 /* enable libcfs ENTRY/EXIT */
 #define CDEBUG_ENTRY_EXIT 1
