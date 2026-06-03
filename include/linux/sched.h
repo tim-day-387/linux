@@ -27,6 +27,7 @@
 #include <linux/hrtimer_types.h>
 #include <linux/timer_types.h>
 #include <linux/seccomp_types.h>
+#include <linux/errno_unwind.h>
 #include <linux/nodemask_types.h>
 #include <linux/refcount_types.h>
 #include <linux/resource.h>
@@ -1495,6 +1496,11 @@ struct task_struct {
 
 	/* Pause tracing: */
 	atomic_t			tracing_graph_pause;
+#endif
+
+#ifdef CONFIG_ERRNO_UNWIND
+	/* Transient errno attribution state for the in-flight syscall: */
+	struct errno_unwind_task	errno_unwind;
 #endif
 
 #ifdef CONFIG_TRACING

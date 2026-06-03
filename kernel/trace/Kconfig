@@ -277,6 +277,26 @@ config FUNCTION_GRAPH_RETVAL
 	  enable it via the trace option funcgraph-retval.
 	  See Documentation/trace/ftrace.rst
 
+config ERRNO_UNWIND
+	bool "Syscall errno originator attribution (/proc/errno_unwind)"
+	depends on FUNCTION_GRAPH_RETVAL
+	depends on FTRACE_SYSCALLS
+	depends on HAVE_SYSCALL_TRACEPOINTS
+	default n
+	help
+	  When a syscall returns a negative errno, use the function graph
+	  tracer's return-value recording to attribute the failure to the
+	  deepest kernel function that originated that errno, rather than the
+	  syscall that merely propagated it.
+
+	  Results are aggregated as a (syscall, errno, originating function)
+	  map exposed via /proc/errno_unwind. Write '1'/'0' to that file to
+	  start/stop tracing and 'c' to clear the table.
+
+	  This adds a small amount of state to every task_struct and, while
+	  enabled, traces all functions executed during syscalls, so it is
+	  intended for debugging and development. If unsure, say N.
+
 config FUNCTION_GRAPH_RETADDR
 	bool "Kernel Function Graph Return Address"
 	depends on FUNCTION_GRAPH_TRACER
