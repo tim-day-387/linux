@@ -2115,6 +2115,11 @@ __latent_entropy struct task_struct *copy_process(
 
 	ftrace_graph_init_task(p);
 
+#ifdef CONFIG_ERRNO_UNWIND
+	/* A child must not inherit the parent's in-flight syscall state. */
+	errno_unwind_init_task(&p->errno_unwind);
+#endif
+
 	rt_mutex_init_task(p);
 	raw_spin_lock_init(&p->blocked_lock);
 
